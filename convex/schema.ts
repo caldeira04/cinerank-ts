@@ -8,23 +8,10 @@ import { authTables } from "@convex-dev/auth/server";
 export default defineSchema({
     ...authTables,
 
-    movies: defineTable({
-        title: v.string(),
-        director: v.string(),
-        year: v.number(),
-        plot: v.optional(v.string()),
-        posterUrl: v.optional(v.string()),
-        imdbRating: v.optional(v.number()),
-        createdAt: v.optional(v.string()),
-        updatedAt: v.optional(v.string()),
-    })
-        .index("by_year", ["year"]),
-
     reviews: defineTable({
-        movieId: v.id("movies"),
         userId: v.id("users"),
+        movieId: v.string(),
         rating: v.number(),
-        title: v.string(),
         content: v.optional(v.string()),
         createdAt: v.optional(v.string()),
         updatedAt: v.optional(v.string()),

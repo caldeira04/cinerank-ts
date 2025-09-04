@@ -1,5 +1,6 @@
-import { v } from "convex/values";
-import { action } from "./_generated/server";
+import { ConvexError, v } from "convex/values";
+import { action, mutation } from "./_generated/server";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const searchMovies = action({
     args: { query: v.string() },
@@ -28,4 +29,26 @@ export const getMovieDetails = action({
 
         return data
     },
+})
+
+export const rateMovie = mutation({
+    args: {
+        movieId: v.string(),
+        rating: v.number(),
+        content: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
+        const { movieId, rating, content } = args
+        const userId = await getAuthUserId(ctx)
+        if (!userId) throw new ConvexError("User not authenticated")
+
+        const review = await ctx.db.insert("reviews", {
+            movieId,
+            rating,
+            content,
+            userId,
+        })
+
+        return review
+    }
 })
