@@ -12,19 +12,21 @@ export const getUser = query({
 })
 
 export const searchMovies = action({
-    args: { query: v.string() },
-    handler: async (ctx, args) => {
-        const data = await fetch(`http://www.omdbapi.com/?s=${encodeURIComponent(args.query)}&apikey=23b16659`)
-            .then(res => res.json())
-            .catch(err => {
-                console.log(err)
-                return []
-            })
-
-        return data
-
+    args: { 
+        query: v.string(), 
+        year: v.optional(v.string()), 
+        page: v.optional(v.number()) 
     },
-})
+    handler: async (ctx, args) => {
+        let url = `http://www.omdbapi.com/?s=${encodeURIComponent(args.query)}&apikey=23b16659&type=movie`;
+        if (args.year) url += `&y=${args.year}`;
+        if (args.page) url += `&page=${args.page}`;
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        return data;
+    },
+});
 
 export const getMovieDetails = internalAction({
     args: { id: v.string() },

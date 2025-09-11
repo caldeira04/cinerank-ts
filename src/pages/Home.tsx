@@ -2,7 +2,7 @@ import { useAction, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api.js"
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MovieCard } from "@/components/movie-card.js";
 import { User } from "lucide-react";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -10,20 +10,82 @@ import { useAuthActions } from "@convex-dev/auth/react";
 export default function Home() {
     const searchMovies = useAction(api.myFunctions.searchMovies)
     const user = useQuery(api.myFunctions.getUser)
-    const [query, setQuery] = useState("")
-    const [movies, setMovies] = useState([])
     const { signOut } = useAuthActions()
+
+    const [query, setQuery] = useState("")
+    const [movies, setMovies] = useState<any[]>([])
+    const [topMovies, setTopMovies] = useState<any[]>([])
 
     async function handleSearch() {
         try {
             const result = await searchMovies({ query })
             if (!result.Response) return
             setMovies(result.Search)
-            console.log(result.Search)
         } catch (error) {
             console.error(error)
         }
     }
+
+    function handleClear() {
+        setQuery("")
+        setMovies([])
+    }
+    useEffect(() => {
+    async function fetchTopOfYear() {
+        const currentYear = new Date().getFullYear();
+        const titles = [
+        "Superman",
+        "F1 The Movie",
+        "Sinners",
+        "Weapons",
+        "Ballerina",
+        "Thunderbolts"
+        ];
+
+        const allResults = await Promise.all(
+        titles.map(title =>
+            searchMovies({ query: title })
+            .then(res => res?.Search || [])
+            .catch(() => [])
+        )
+        );
+
+
+        const flatResults = allResults.flat();
+
+        if (!flatResults.length) return;
+
+
+        const detailed = await Promise.all(
+        flatResults.map((m: any) =>
+            fetch(`http://www.omdbapi.com/?i=${m.imdbID}&apikey=23b16659`)
+            .then(res => res.json())
+            .catch(() => null)
+        )
+        );
+
+        const top = detailed
+        .filter(m => {
+            if (!m) return false;
+            if (!m.Released || m.Released === "N/A") return false;
+            if (!m.imdbRating || m.imdbRating === "N/A") return false;
+            if (!m.imdbVotes || m.imdbVotes === "N/A") return false;
+
+            const releaseDate = new Date(m.Released);
+            const releaseYear = releaseDate.getFullYear();
+            const votes = Number(m.imdbVotes.replace(/,/g, ""));
+
+            return releaseYear === currentYear && votes >= 0;
+        })
+        .sort((a, b) => Number(b.imdbRating) - Number(a.imdbRating))
+        .slice(0, 6);
+
+        setTopMovies(top);
+    }
+
+    fetchTopOfYear();
+    }, [searchMovies]);
+
 
     if (user === null) return window.location.href = "/login"
 
@@ -45,20 +107,35 @@ export default function Home() {
                     <Button onClick={() => { window.location.href = "/login" }}>Login</Button>
                 }
             </div>
-            <div className="flex items-center flex-between gap-4">
+
+            <div className="flex items-center gap-4">
                 <Input
                     placeholder="Search movies"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                 />
                 <Button onClick={() => { void handleSearch() }}>Search</Button>
+                {movies.length > 0 && (
+                    <Button variant="outline" onClick={handleClear}>
+                        Clear
+                    </Button>
+                )}
             </div>
-            <div className="grid grid-cols-3 gap-4">
 
-                {movies.map((m) => {
-                    return <MovieCard movie={m} />
-                })}
-            </div>
-        </div >
+            {movies.length > 0 ? (
+                <div className="grid grid-cols-3 gap-4">
+                    {movies.map((m) => <MovieCard key={m.imdbID} movie={m} />)}
+                </div>
+            ) : (
+                <div className="flex flex-col gap-4">
+                    <h2 className="text-lg font-semibold mb-2">
+                        Top rated movies of {new Date().getFullYear()}
+                    </h2>
+                    <div className="grid grid-cols-3 gap-4">
+                        {topMovies.map((m) => <MovieCard key={m.imdbID} movie={m} />)}
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }
