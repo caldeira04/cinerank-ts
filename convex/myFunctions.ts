@@ -1,6 +1,14 @@
 import { ConvexError, v } from "convex/values";
-import { action, mutation } from "./_generated/server";
+import { action, mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+
+export const getUser = query({
+    handler: async (ctx) => {
+        const userId = await getAuthUserId(ctx)
+        if (userId === null) return null
+        return await ctx.db.get(userId)
+    }
+})
 
 export const searchMovies = action({
     args: { query: v.string() },
@@ -47,8 +55,23 @@ export const rateMovie = mutation({
             rating,
             content,
             userId,
+            createdAt: new Date().toISOString()
         })
 
         return review
     }
+})
+
+export const getReviewsForUser = query({
+    handler: async (ctx) => {
+        const userId = await getAuthUserId(ctx)
+        if (!userId) throw new ConvexError("User not authenticated")
+        const reviews = ctx.db.query('reviews')
+            .withIndex("by_user")
+            .order("desc")
+            .collect()
+
+        return reviews
+    }
+
 })

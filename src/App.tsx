@@ -2,12 +2,18 @@
 
 import { ThemeProvider } from "next-themes";
 import Home from "./pages/Home";
+import { Authenticated, Unauthenticated } from "convex/react";
+import { SignInSignUp } from "./pages/SignUp";
 
 export default function App() {
     return (
         <ThemeProvider>
-            <Home />
-
+            <Authenticated>
+                <Home />
+            </Authenticated>
+            <Unauthenticated>
+                <SignInSignUp />
+            </Unauthenticated>
         </ThemeProvider>
     );
 }

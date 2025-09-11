@@ -49,7 +49,6 @@ export function RateMovieCard({
     async function handleRateClick() {
         const movie = await getMovieDetails({ id: movieId })
         setMovie(movie)
-        console.log(movie)
         if (!movie) return
     }
 

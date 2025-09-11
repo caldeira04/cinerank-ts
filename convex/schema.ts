@@ -21,12 +21,8 @@ export default defineSchema({
         .index("by_created", ["createdAt"]),
 
     users: defineTable({
-        username: v.string(),
         email: v.string(),
-        role: v.union(
-            v.literal("user"),
-            v.literal("admin"),
-        ),
+        role: v.optional(v.literal("admin")),
         createdAt: v.optional(v.string()),
         updatedAt: v.optional(v.string()),
     })
