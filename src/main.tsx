@@ -9,6 +9,7 @@ import {
     RouterProvider,
 } from "react-router-dom";
 import { SignInSignUp } from "./pages/SignUp.tsx";
+import Profile from "./pages/Profile.tsx";
 
 const router = createBrowserRouter([
     {
@@ -19,6 +20,10 @@ const router = createBrowserRouter([
         path: "/login",
         element: <SignInSignUp />,
     },
+    {
+        path: "/profile/:id",
+        element: <Profile />
+    }
 ]);
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);

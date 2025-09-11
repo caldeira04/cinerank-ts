@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
-import { action, mutation, query } from "./_generated/server";
+import { action, internalAction, internalQuery, mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const getUser = query({
@@ -25,7 +26,7 @@ export const searchMovies = action({
     },
 })
 
-export const getMovieDetails = action({
+export const getMovieDetails = internalAction({
     args: { id: v.string() },
     handler: async (ctx, args) => {
         const data = await fetch(`http://www.omdbapi.com/?i=${encodeURIComponent(args.id)}&apikey=23b16659`)
@@ -39,6 +40,14 @@ export const getMovieDetails = action({
     },
 })
 
+export const getMoviePublic = action({
+    args: { id: v.string() },
+    handler: async (ctx, args) => {
+        const data: any = await ctx.runAction(internal.myFunctions.getMovieDetails, args)
+        return data
+    }
+})
+
 export const rateMovie = mutation({
     args: {
         movieId: v.string(),
@@ -49,6 +58,10 @@ export const rateMovie = mutation({
         const { movieId, rating, content } = args
         const userId = await getAuthUserId(ctx)
         if (!userId) throw new ConvexError("User not authenticated")
+        const movie = await ctx.db.query("reviews").withIndex("by_user").collect()
+        if (movie.length > 0) {
+            throw new ConvexError("You have already rated this movie")
+        }
 
         const review = await ctx.db.insert("reviews", {
             movieId,
@@ -66,6 +79,19 @@ export const getReviewsForUser = query({
     handler: async (ctx) => {
         const userId = await getAuthUserId(ctx)
         if (!userId) throw new ConvexError("User not authenticated")
+        const reviews = await ctx.db.query('reviews')
+            .withIndex("by_user")
+            .order("desc")
+            .collect()
+
+        return reviews
+    }
+})
+
+export const getReviewsForUserInternal = internalQuery({
+    handler: async (ctx) => {
+        const userId = await getAuthUserId(ctx)
+        if (!userId) throw new ConvexError("User not authenticated")
         const reviews = ctx.db.query('reviews')
             .withIndex("by_user")
             .order("desc")
@@ -73,5 +99,37 @@ export const getReviewsForUser = query({
 
         return reviews
     }
+})
 
+export const getUserReviewsWithMovies = action({
+    handler: async (ctx) => {
+        const userId = await getAuthUserId(ctx)
+        if (!userId) throw new ConvexError("User not authenticated")
+
+        const reviews: any = await ctx.runQuery(internal.myFunctions.getReviewsForUserInternal, {})
+
+        const reviewsWithMovies = await Promise.all(
+            reviews.map(async (r: any) => {
+                const movie = await ctx.runAction(internal.myFunctions.getMovieDetails, { id: r.movieId })
+                return {
+                    ...r,
+                    movie
+                }
+            })
+        )
+        return reviewsWithMovies
+    }
+})
+
+export const deleteReview = mutation({
+    args: {
+        id: v.id("reviews"),
+    },
+    handler: async (ctx, args) => {
+        const { id } = args
+        const userId = await getAuthUserId(ctx)
+        if (!userId) throw new ConvexError("User not authenticated")
+        await ctx.db.delete(id)
+        return true
+    }
 })

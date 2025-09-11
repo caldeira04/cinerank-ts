@@ -23,6 +23,7 @@ import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { Textarea } from "@/components/ui/textarea"
+import { toast } from "sonner"
 
 interface Movie {
     Title: string
@@ -44,7 +45,8 @@ export function RateMovieCard({
     movieId: string
 }) {
     const [movie, setMovie] = useState<Movie>()
-    const getMovieDetails = useAction(api.myFunctions.getMovieDetails)
+    const [open, setOpen] = useState(false)
+    const getMovieDetails = useAction(api.myFunctions.getMoviePublic)
     const rateMovie = useMutation(api.myFunctions.rateMovie)
     async function handleRateClick() {
         const movie = await getMovieDetails({ id: movieId })
@@ -65,13 +67,13 @@ export function RateMovieCard({
             ...data,
             movieId,
         }
-
         rateMovie(values)
-        console.log(values)
+            .then(() => setOpen(false))
+            .catch(err => toast.error("Something went wrong. Did you rate this movie before?"))
     }
 
     return (
-        <Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button onClick={() => void handleRateClick()}>Rate</Button>
             </DialogTrigger>

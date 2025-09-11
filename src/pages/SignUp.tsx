@@ -1,6 +1,7 @@
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
 export function SignInSignUp() {
@@ -13,7 +14,13 @@ export function SignInSignUp() {
                 onSubmit={(event) => {
                     event.preventDefault();
                     const formData = new FormData(event.currentTarget);
-                    void signIn("password", formData);
+                    void signIn("password", formData)
+                        .then(() => {
+                            toast.success("Signed in successfully");
+                        })
+                        .catch(() => {
+                            toast.error("Invalid credentials");
+                        });
                 }}
                 className="flex flex-col gap-3 max-w-sm mx-auto p-6 border rounded-2xl shadow"
             >
