@@ -23,7 +23,6 @@ export default defineSchema({
     users: defineTable({
         username: v.string(),
         email: v.string(),
-        passwordHash: v.string(),
         role: v.union(
             v.literal("user"),
             v.literal("admin"),
