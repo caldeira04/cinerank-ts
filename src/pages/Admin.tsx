@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/table"
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { redirect } from "react-router-dom";
 
 
 export default function Admin() {

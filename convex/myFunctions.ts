@@ -63,6 +63,7 @@ export const searchMovies = action({
         let url = `http://www.omdbapi.com/?s=${encodeURIComponent(args.query)}&apikey=23b16659&type=movie`;
         if (args.year) url += `&y=${args.year}`;
         if (args.page) url += `&page=${args.page}`;
+        ctx
 
         const response = await fetch(url);
         const data = await response.json();
@@ -80,6 +81,7 @@ export const getMovieDetails = internalAction({
                 return []
             })
 
+        ctx
         return data
     },
 })
