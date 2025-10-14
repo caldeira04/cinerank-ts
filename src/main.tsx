@@ -10,6 +10,8 @@ import {
 } from "react-router-dom";
 import { SignInSignUp } from "./pages/SignUp.tsx";
 import Profile from "./pages/Profile.tsx";
+import Admin from "./pages/Admin.tsx";
+import { ProfileRoute } from "./components/profile-route.tsx";
 
 const router = createBrowserRouter([
     {
@@ -23,6 +25,14 @@ const router = createBrowserRouter([
     {
         path: "/profile/:id",
         element: <Profile />
+    },
+    {
+        path: "/profile",
+        element: <ProfileRoute />
+    },
+    {
+        path: "/admin",
+        element: <Admin />
     }
 ]);
 

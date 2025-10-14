@@ -31,59 +31,59 @@ export default function Home() {
         setMovies([])
     }
     useEffect(() => {
-    async function fetchTopOfYear() {
-        const currentYear = new Date().getFullYear();
-        const titles = [
-        "Superman",
-        "F1 The Movie",
-        "Sinners",
-        "Weapons",
-        "Ballerina",
-        "Thunderbolts"
-        ];
+        async function fetchTopOfYear() {
+            const currentYear = new Date().getFullYear();
+            const titles = [
+                "Superman",
+                "F1 The Movie",
+                "Sinners",
+                "Weapons",
+                "Ballerina",
+                "Thunderbolts"
+            ];
 
-        const allResults = await Promise.all(
-        titles.map(title =>
-            searchMovies({ query: title })
-            .then(res => res?.Search || [])
-            .catch(() => [])
-        )
-        );
-
-
-        const flatResults = allResults.flat();
-
-        if (!flatResults.length) return;
+            const allResults = await Promise.all(
+                titles.map(title =>
+                    searchMovies({ query: title })
+                        .then(res => res?.Search || [])
+                        .catch(() => [])
+                )
+            );
 
 
-        const detailed = await Promise.all(
-        flatResults.map((m: any) =>
-            fetch(`http://www.omdbapi.com/?i=${m.imdbID}&apikey=23b16659`)
-            .then(res => res.json())
-            .catch(() => null)
-        )
-        );
+            const flatResults = allResults.flat();
 
-        const top = detailed
-        .filter(m => {
-            if (!m) return false;
-            if (!m.Released || m.Released === "N/A") return false;
-            if (!m.imdbRating || m.imdbRating === "N/A") return false;
-            if (!m.imdbVotes || m.imdbVotes === "N/A") return false;
+            if (!flatResults.length) return;
 
-            const releaseDate = new Date(m.Released);
-            const releaseYear = releaseDate.getFullYear();
-            const votes = Number(m.imdbVotes.replace(/,/g, ""));
 
-            return releaseYear === currentYear && votes >= 0;
-        })
-        .sort((a, b) => Number(b.imdbRating) - Number(a.imdbRating))
-        .slice(0, 6);
+            const detailed = await Promise.all(
+                flatResults.map((m: any) =>
+                    fetch(`http://www.omdbapi.com/?i=${m.imdbID}&apikey=23b16659`)
+                        .then(res => res.json())
+                        .catch(() => null)
+                )
+            );
 
-        setTopMovies(top);
-    }
+            const top = detailed
+                .filter(m => {
+                    if (!m) return false;
+                    if (!m.Released || m.Released === "N/A") return false;
+                    if (!m.imdbRating || m.imdbRating === "N/A") return false;
+                    if (!m.imdbVotes || m.imdbVotes === "N/A") return false;
 
-    fetchTopOfYear();
+                    const releaseDate = new Date(m.Released);
+                    const releaseYear = releaseDate.getFullYear();
+                    const votes = Number(m.imdbVotes.replace(/,/g, ""));
+
+                    return releaseYear === currentYear && votes >= 0;
+                })
+                .sort((a, b) => Number(b.imdbRating) - Number(a.imdbRating))
+                .slice(0, 6);
+
+            setTopMovies(top);
+        }
+
+        fetchTopOfYear();
     }, [searchMovies]);
 
 

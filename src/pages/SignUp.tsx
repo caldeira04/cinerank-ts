@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { redirect } from "react-router-dom";
 
 export function SignInSignUp() {
     const { signIn } = useAuthActions();
@@ -17,6 +18,7 @@ export function SignInSignUp() {
                     void signIn("password", formData)
                         .then(() => {
                             toast.success("Signed in successfully");
+                            redirect("/")
                         })
                         .catch(() => {
                             toast.error("Invalid credentials");

@@ -4,9 +4,11 @@ import { api } from "../../convex/_generated/api.js";
 import { useAction, useQuery } from "convex/react";
 import { Home } from "lucide-react";
 import { useEffect, useState } from "react";
+import { redirect } from "react-router-dom";
 
 export default function Profile() {
     const user = useQuery(api.myFunctions.getUser)
+    if (!user) redirect("/login")
     const getUserReviewsWithMovies = useAction(api.myFunctions.getUserReviewsWithMovies)
     const [reviews, setReviews] = useState<any>()
 
@@ -28,6 +30,16 @@ export default function Profile() {
                 <div>
                     {user && <h1>Reviews for {user.email}</h1>}
                 </div>
+            </div>
+            <div className="w-full">
+                {user?.role === "admin" &&
+                    <Button
+                        className="w-full"
+                        onClick={() => { window.location.href = "/admin" }}
+                    >
+                        <span>Admin Panel</span>
+                    </Button>
+                }
             </div>
             <div className="flex flex-col w-full h-1/3 gap-4">
                 {user && reviews?.map((r: any) => {

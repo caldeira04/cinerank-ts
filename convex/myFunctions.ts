@@ -1,5 +1,5 @@
 import { ConvexError, v } from "convex/values";
-import { action, internalAction, internalQuery, mutation, query } from "./_generated/server";
+import { action, internalAction, internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -8,6 +8,20 @@ export const getUser = query({
         const userId = await getAuthUserId(ctx)
         if (userId === null) return null
         return await ctx.db.get(userId)
+    }
+})
+
+export const setAdmin = internalMutation({
+    args: {
+        userId: v.id("users")
+    },
+    handler: async (ctx, args) => {
+        const { userId } = args
+        await ctx.db.patch(userId, {
+            role: "admin"
+        })
+
+        return "success"
     }
 })
 
@@ -134,6 +148,19 @@ export const deleteReview = mutation({
         const { id } = args
         const userId = await getAuthUserId(ctx)
         if (!userId) throw new ConvexError("User not authenticated")
+
+        const review = await ctx.db.query("reviews")
+            .withIndex("by_id", (q) => q.eq("_id", id))
+            .first()
+
+        const user = await ctx.db.query("users")
+            .withIndex("by_id", (q) => q.eq("_id", userId))
+            .first()
+
+        const canDelete = review?.userId === user?._id || user?.role === "admin"
+
+        if (!canDelete) throw new ConvexError("not allowed")
+
         await ctx.db.delete(id)
         return true
     }
