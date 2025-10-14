@@ -5,16 +5,18 @@ import { useAction, useQuery } from "convex/react";
 import { Home } from "lucide-react";
 import { useEffect, useState } from "react";
 import { redirect } from "react-router-dom";
+import { Id } from "convex/_generated/dataModel.js";
 
 export default function Profile() {
-    const user = useQuery(api.myFunctions.getUser)
+    const pathname = window.location.pathname.split("/").at(2)
+    const user = useQuery(api.myFunctions.getProfile, { userId: pathname as Id<"users"> })
     if (!user) redirect("/login")
     const getUserReviewsWithMovies = useAction(api.myFunctions.getUserReviewsWithMovies)
     const [reviews, setReviews] = useState<any>()
 
     useEffect(() => {
         async function fetchReviews() {
-            const data = await getUserReviewsWithMovies({})
+            const data = await getUserReviewsWithMovies({ userId: pathname as Id<"users"> })
             setReviews(data)
         }
         fetchReviews()

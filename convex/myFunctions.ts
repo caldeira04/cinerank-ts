@@ -11,6 +11,21 @@ export const getUser = query({
     }
 })
 
+export const getProfile = query({
+    args: {
+        userId: v.id("users")
+    },
+    handler: async (ctx, args) => {
+        const { userId } = args
+
+        const user = await ctx.db.query("users")
+            .withIndex("by_id", (q) => q.eq("_id", userId))
+            .first()
+
+        return user
+    }
+})
+
 export const getUsers = query({
     handler: async (ctx) => {
         const userId = await getAuthUserId(ctx)
@@ -138,11 +153,14 @@ export const getReviewsForUser = query({
 })
 
 export const getReviewsForUserInternal = internalQuery({
-    handler: async (ctx) => {
-        const userId = await getAuthUserId(ctx)
+    args: {
+        userId: v.optional(v.id("users"))
+    },
+    handler: async (ctx, args) => {
+        const { userId } = args
         if (!userId) throw new ConvexError("User not authenticated")
         const reviews = ctx.db.query('reviews')
-            .withIndex("by_user")
+            .withIndex("by_user", (q) => q.eq("userId", userId))
             .order("desc")
             .collect()
 
@@ -151,11 +169,13 @@ export const getReviewsForUserInternal = internalQuery({
 })
 
 export const getUserReviewsWithMovies = action({
-    handler: async (ctx) => {
-        const userId = await getAuthUserId(ctx)
-        if (!userId) throw new ConvexError("User not authenticated")
+    args: {
+        userId: v.optional(v.id("users"))
+    },
+    handler: async (ctx, args) => {
+        const { userId } = args
 
-        const reviews: any = await ctx.runQuery(internal.myFunctions.getReviewsForUserInternal, {})
+        const reviews: any = await ctx.runQuery(internal.myFunctions.getReviewsForUserInternal, { userId })
 
         const reviewsWithMovies = await Promise.all(
             reviews.map(async (r: any) => {

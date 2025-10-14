@@ -20,8 +20,6 @@ export default function Admin() {
 
     const users = useQuery(api.myFunctions.getUsers)
 
-    console.log(users)
-
     return (
         <AdminRoute>
             <div className="flex flex-col items-center justify-between w-full p-8">

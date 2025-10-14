@@ -11,12 +11,14 @@ import { Button } from "./ui/button"
 import { useMutation } from "convex/react"
 import { api } from "../../convex/_generated/api"
 import { Id } from "convex/_generated/dataModel"
+import { useCurrentUser } from "@/hooks/use-current-user"
 
 export interface Review {
     _id: string,
     rating: number,
     content?: string
     createdAt: string
+    userId: string
     movie: {
         Title: string
         Year: number
@@ -27,6 +29,9 @@ export interface Review {
 
 export function ReviewCard({ review }: { review: Review }) {
     const deleteReview = useMutation(api.myFunctions.deleteReview)
+    const { user } = useCurrentUser()
+
+    const canDelete = user?.role === "admin" || user?._id === review.userId
 
     return (
         <Card className="w-full">
@@ -56,16 +61,18 @@ export function ReviewCard({ review }: { review: Review }) {
                 </div>
             </CardContent>
             <CardFooter className="flex justify-end">
-                <CardAction>
-                    <Button
-                        variant="destructive"
-                        onClick={() => {
-                            void deleteReview({ id: review._id as Id<'reviews'> })
-                                .then(() => window.location.reload())
-                        }}
+                {canDelete &&
+                    <CardAction>
+                        <Button
+                            variant="destructive"
+                            onClick={() => {
+                                void deleteReview({ id: review._id as Id<'reviews'> })
+                                    .then(() => window.location.reload())
+                            }}
 
-                    >Delete</Button>
-                </CardAction>
+                        >Delete</Button>
+                    </CardAction>
+                }
             </CardFooter>
         </Card>
     )
