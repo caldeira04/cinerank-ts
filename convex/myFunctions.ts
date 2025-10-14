@@ -11,6 +11,34 @@ export const getUser = query({
     }
 })
 
+export const getUsers = query({
+    handler: async (ctx) => {
+        const userId = await getAuthUserId(ctx)
+        if (!userId) throw new ConvexError("Not authenticated")
+        const user = await ctx.db.query("users")
+            .withIndex("by_id", (q) => q.eq("_id", userId))
+            .first()
+
+        if (user?.role !== "admin") throw new ConvexError("Unauthorized")
+
+        const users = await ctx.db.query("users")
+            .collect()
+
+        const usersWithReviews = await Promise.all(
+            users.map(async (user) => {
+                const reviews = await ctx.db.query("reviews")
+                    .withIndex("by_user", (q) => q.eq("userId", user._id))
+                    .collect()
+                return {
+                    ...user,
+                    reviews
+                }
+            }))
+
+        return usersWithReviews
+    }
+})
+
 export const setAdmin = internalMutation({
     args: {
         userId: v.id("users")
