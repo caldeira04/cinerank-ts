@@ -12,16 +12,16 @@ export const getUser = query({
 })
 
 export const searchMovies = action({
-    args: { 
-        query: v.string(), 
-        year: v.optional(v.string()), 
-        page: v.optional(v.number()) 
+    args: {
+        query: v.string(),
+        year: v.optional(v.string()),
+        page: v.optional(v.number())
     },
     handler: async (ctx, args) => {
         let url = `http://www.omdbapi.com/?s=${encodeURIComponent(args.query)}&apikey=23b16659&type=movie`;
         if (args.year) url += `&y=${args.year}`;
         if (args.page) url += `&page=${args.page}`;
-        
+
         const response = await fetch(url);
         const data = await response.json();
         return data;
@@ -60,10 +60,13 @@ export const rateMovie = mutation({
         const { movieId, rating, content } = args
         const userId = await getAuthUserId(ctx)
         if (!userId) throw new ConvexError("User not authenticated")
-        const movie = await ctx.db.query("reviews").withIndex("by_user").collect()
-        if (movie.length > 0) {
-            throw new ConvexError("You have already rated this movie")
-        }
+
+        const existing = await ctx.db.query("reviews")
+            .withIndex("by_userId_movieId", q =>
+                q.eq("userId", userId).eq("movieId", movieId)
+            ).first()
+
+        if (existing) throw new ConvexError("You already have a review for this movie")
 
         const review = await ctx.db.insert("reviews", {
             movieId,

@@ -18,6 +18,7 @@ export default defineSchema({
     })
         .index("by_movie", ["movieId"])
         .index("by_user", ["userId"])
+        .index("by_userId_movieId", ["userId", "movieId"])
         .index("by_created", ["createdAt"]),
 
     users: defineTable({

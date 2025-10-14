@@ -69,7 +69,7 @@ export function RateMovieCard({
         }
         rateMovie(values)
             .then(() => setOpen(false))
-            .catch(err => toast.error("Something went wrong. Did you rate this movie before?"))
+            .catch(() => toast.error("Something went wrong. Did you rate this movie before?"))
     }
 
     return (
