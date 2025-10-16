@@ -27,7 +27,7 @@ export default function Admin() {
                     <Button
                         className="self-start"
                         onClick={() => { window.location.href = "/profile" }}>
-                        <ArrowLeft /> retornar
+                        <ArrowLeft /> Return
                     </Button>
                     <h1 className="w-full text-center font-bold text-3xl">Admin Panel</h1>
                 </div>
