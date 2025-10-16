@@ -223,7 +223,7 @@ export const deleteReview = mutation({
     handler: async (ctx, args) => {
         const { id } = args
         const userId = await getAuthUserId(ctx)
-        if (!userId) throw new ConvexError("User not authenticated")
+        if (!userId) throw new ConvexError("Usuário não autenticado")
 
         const review = await ctx.db.query("reviews")
             .withIndex("by_id", (q) => q.eq("_id", id))
@@ -235,14 +235,18 @@ export const deleteReview = mutation({
 
         const canDelete = review?.userId === user?._id || user?.role === "admin"
 
-        if (!canDelete) throw new ConvexError("not allowed")
+        if (!canDelete) throw new ConvexError("Não permitido")
 
         await ctx.db.delete(id)
 
         await ctx.db.insert("logs", {
             userId,
             action: "delete_review",
-            details: JSON.stringify({ reviewId: id }),
+            details: JSON.stringify({
+                reviewId: id,
+                movieId: review?.movieId,
+                performedBy: userId
+            }),
             timestamp: new Date().toISOString()
         })
 
