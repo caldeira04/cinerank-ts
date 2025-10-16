@@ -80,6 +80,7 @@ export const searchMovies = action({
         page: v.optional(v.number())
     },
     handler: async (ctx, args) => {
+        ctx
         let url = `http://www.omdbapi.com/?s=${encodeURIComponent(args.query)}&apikey=23b16659&type=movie`;
         if (args.year) url += `&y=${args.year}`;
         if (args.page) url += `&page=${args.page}`;
@@ -93,6 +94,7 @@ export const searchMovies = action({
 export const getMovieDetails = internalAction({
     args: { id: v.string() },
     handler: async (ctx, args) => {
+        ctx
         const data = await fetch(`http://www.omdbapi.com/?i=${encodeURIComponent(args.id)}&apikey=23b16659`)
             .then(res => res.json())
             .catch(err => {
