@@ -39,4 +39,13 @@ export default defineSchema({
     })
         .index("by_movie", ["movieId"])
         .index("by_tag", ["tagId"]),
+
+    logs: defineTable({
+        userId: v.id("users"),
+        action: v.string(),
+        details: v.optional(v.string()),
+        timestamp: v.string(),
+    })
+        .index("by_user", ["userId"])
+        .index("by_timestamp", ["timestamp"]),
 });

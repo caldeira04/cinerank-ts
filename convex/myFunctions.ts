@@ -39,18 +39,23 @@ export const getUsers = query({
         const users = await ctx.db.query("users")
             .collect()
 
-        const usersWithReviews = await Promise.all(
+        const usersWithData = await Promise.all(
             users.map(async (user) => {
                 const reviews = await ctx.db.query("reviews")
                     .withIndex("by_user", (q) => q.eq("userId", user._id))
                     .collect()
+                const logs = await ctx.db.query("logs")
+                    .withIndex("by_user", (q) => q.eq("userId", user._id))
+                    .order("desc")
+                    .collect()
                 return {
                     ...user,
-                    reviews
+                    reviews,
+                    logs
                 }
             }))
 
-        return usersWithReviews
+        return usersWithData
     }
 })
 
@@ -78,13 +83,12 @@ export const searchMovies = action({
         let url = `http://www.omdbapi.com/?s=${encodeURIComponent(args.query)}&apikey=23b16659&type=movie`;
         if (args.year) url += `&y=${args.year}`;
         if (args.page) url += `&page=${args.page}`;
-        ctx
 
         const response = await fetch(url);
         const data = await response.json();
         return data;
     },
-});
+})
 
 export const getMovieDetails = internalAction({
     args: { id: v.string() },
@@ -96,7 +100,6 @@ export const getMovieDetails = internalAction({
                 return []
             })
 
-        ctx
         return data
     },
 })
@@ -135,6 +138,13 @@ export const rateMovie = mutation({
             createdAt: new Date().toISOString()
         })
 
+        await ctx.db.insert("logs", {
+            userId,
+            action: "rate_movie",
+            details: JSON.stringify({ movieId, rating, content }),
+            timestamp: new Date().toISOString()
+        })
+
         return review
     }
 })
@@ -168,6 +178,22 @@ export const getReviewsForUserInternal = internalQuery({
     }
 })
 
+export const getLogsForUserInternal = internalQuery({
+    args: {
+        userId: v.optional(v.id("users"))
+    },
+    handler: async (ctx, args) => {
+        const { userId } = args
+        if (!userId) throw new ConvexError("User not authenticated")
+        const logs = ctx.db.query('logs')
+            .withIndex("by_user", (q) => q.eq("userId", userId))
+            .order("desc")
+            .collect()
+
+        return logs
+    }
+})
+
 export const getUserReviewsWithMovies = action({
     args: {
         userId: v.optional(v.id("users"))
@@ -197,7 +223,7 @@ export const deleteReview = mutation({
     handler: async (ctx, args) => {
         const { id } = args
         const userId = await getAuthUserId(ctx)
-        if (!userId) throw new ConvexError("User not authenticated")
+        if (!userId) throw new ConvexError("Usuário não autenticado")
 
         const review = await ctx.db.query("reviews")
             .withIndex("by_id", (q) => q.eq("_id", id))
@@ -209,9 +235,21 @@ export const deleteReview = mutation({
 
         const canDelete = review?.userId === user?._id || user?.role === "admin"
 
-        if (!canDelete) throw new ConvexError("not allowed")
+        if (!canDelete) throw new ConvexError("Não permitido")
 
         await ctx.db.delete(id)
+
+        await ctx.db.insert("logs", {
+            userId,
+            action: "delete_review",
+            details: JSON.stringify({
+                reviewId: id,
+                movieId: review?.movieId,
+                performedBy: userId
+            }),
+            timestamp: new Date().toISOString()
+        })
+
         return true
     }
 })
